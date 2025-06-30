@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='UTF-8'>
+        <title></title>
+    </head>
+    <body onload="getContact()">    <!--Automatically loads the contacts as soon as the page opens.-->>
+        <div id="avatarImage"></div>
+        <form id="editForm">
+            <label for="firstname">First name</label>
+            <input type="text" name="firstname" id="firstname" readonly><br/>   <!--the form is readonly unless the edit button is clicked.-->
+            <label for="lastname">Last name</label>
+            <input type="text" name="lastname" id="lastname" readonly><br/>
+            <label for="mobile">Mobile</label>
+            <input type="text" name="mobile" id="mobile" readonly><br/>
+            <label for="email">Email</label>
+            <input type="text" name="email" id="email" readonly><br/>
+            <label for="avatar" id="avatarLabel" hidden>Change profile image</label><br/>
+            <input type="file" name="avatar" id="avatar" hidden><br/> 
+            <br/>           
+            <button type="submit" id="submitForm" hidden>Submit</button>
+        </form>  
+        <br/><br/>
+        <button id="homeLink" type="button">Home</button>
+        <button id="editContact" type="button">Edit</button>
+        <button id="deleteContact" type="button">Delete</button>
+
+        <script src="config.js"></script>
+        <script>            
+            var id = getId();   //stores the return value from the get id finction as a global variable.
+            document.getElementById("homeLink").addEventListener('click', homeLink);
+            document.getElementById("editContact").addEventListener('click', editContact);
+            document.getElementById("submitForm").addEventListener('click', submitForm);
+            document.getElementById("deleteContact").addEventListener('click', deleteContact);
+            //console.log("The id is: " + id);
+
+
+           //Extracts the contact id of the contact that the user clicked on from the url and stores it in a variable.  
+           function getId(){
+            var url = window.location.href;     //obtain the url of the window that is currently open and store it in a variable
+            var pos = url.search("=")           //find the position of the special character(equals sign) in the url.
+            var id = url.slice(pos + 1);        //cut out all the characters in the url up to the equals sign and leave out the id. 
+
+            return id;
+           }
+
+
+           //Retrieves the contact information associated with the contact id extracted in the getId function from the database.
+            function getContact(){
+                fetch(rootPath + 'controller/get-contacts/?id=' + id)   //sends id to the database via api.
+                
+                //return a response in the form of a json array.
+                .then(function(response){
+                    return response.json();
+                })
+
+                //receives the response(json array) and calls displayOutput function to display it into the form.
+                .then(function(data){
+                    displayOutput(data);
+                    //console.log(data); //test if the json array of a specific contact has been succesfully returned.
+                })
+           }
+      
+
+           /*Event handler for when the home button is clicked. Opens the homepage(index.html) in the tab/window that is currently open.*/
+           function homeLink(){
+                window.open("index.html", "_self");
+           }
+
+
+           //Displays the json array received into the form fields.
+           function displayOutput(data){
+                avatarImg = `
+                    <img src="${rootPath}/controller/uploads/${data[0].avatar}" width="200" />
+                     `   
+                document.getElementById("avatarImage").innerHTML = avatarImg;
+                document.getElementById("firstname").value = data[0].firstname;
+                document.getElementById("lastname").value = data[0].lastname;
+                document.getElementById("mobile").value = data[0].mobile;
+                document.getElementById("email").value = data[0].email;
+           }
+
+
+           /*Event handler for when the edit button is clicked. Disbles the readonly feature on the form, makes the label for
+           changing the profile image and the submit button visible on the screen*/
+           function editContact(){
+            document.getElementById("firstname").readOnly = false;
+            document.getElementById("lastname").readOnly = false;
+            document.getElementById("mobile").readOnly = false;
+            document.getElementById("email").readOnly = false;
+            document.getElementById("avatar").hidden = false;
+            document.getElementById("submitForm").hidden = false;
+           }
+
+
+          //Event handler for when the submit button is clicked. 
+           function submitForm(e){
+                e.preventDefault();
+
+                //create a form data object and append apikey and id to it.
+                const form = new FormData(document.querySelector("#editForm"));
+                form.append('apiKey', apiKey)
+                form.append('id', id);           
+           
+                //Sends the form data object to the api.
+                fetch(rootPath + 'controller/edit-contact/', {
+                    method: 'POST',
+                    headers: {'Accept': 'application/json, *.*'},
+                    body: form
+                })
+
+                //returns form submission feedback. 
+                .then(function(response){
+                    return response.text();
+                })
+
+                //Displays an alert based on feedback received and automatically link to the home page.
+                .then(function(data){
+                    if (data == "1"){
+                        alert("Contact edited");
+                        homeLink();
+                    } else {
+                        alert(data);
+                        homeLink();
+                    }
+                }) 
+            }
+
+            //Event handler for when the delete button is clicked.
+            function deleteContact(){
+                var confirmDelete = confirm("Delete contact. Are you sure?");
+                
+                //if user confirms deletetion, send the id to the api.
+                if(confirmDelete){
+                    fetch(rootPath + 'controller/delete-contact/? id=' + id)
+                    .then(function(response){
+                        return response.text();
+                    })
+                    .then(function(data){
+                        if(data=="1"){
+                            homeLink();
+                        } else {
+                            alert(data);
+                        }
+                    })
+                }
+            }
+        </script>
+    </body>
+</html>

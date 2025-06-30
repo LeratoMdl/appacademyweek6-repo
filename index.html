@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title></title>
+    </head>
+    <body onload="fetchContacts()"> <!--automatically displays the contacts on the screen as soon as the page loads.-->    
+        <div id="table">Contacts loading....</div> 
+        <button id="refresh" type="button">Refresh</button>
+        <button id="addContact" type="button">Add Contact</button>
+       
+        <script src="config.js"></script>  <!--Checks if an api key has been set, if not, redirects to a page where a valid api key is entered--> 
+        <script>
+            document.getElementById("refresh").addEventListener('click', fetchContacts);
+            document.getElementById("addContact").addEventListener('click', addContact);
+
+            //Retrieves the contacts from the database. 
+            function fetchContacts(){
+                fetch(rootPath + "controller/get-contacts/")   
+                //converts the response object from the database into a json array and returns it.
+                .then(function(response) {
+                    return response.json();
+                })
+                //receives the json array returned and calls another function that will display it on the screen in a table format.
+                .then(function(data) {
+                    displayOutput(data);
+                    //console.log(data); //checks if the api call has been successful.
+                })
+            }
+
+            //Iterates through the json array(the value of the parameter 'data') and displays each row of data from the array on the screen. 
+            function displayOutput(data) {
+                output = "<table>";
+
+                for (a in data){
+                    output += `
+                        <tr onclick="editContact(${data[a].id})">
+                            <td> <img src="${rootPath}controller/uploads/${data[a].avatar}"/ width="40"/></td>
+                            <td><h5>${data[a].firstname}</h5></td>
+                            <td><h5>${data[a].lastname}</h5></td>
+                        </tr>
+                    ` 
+                }
+
+            output += "<table>";
+            document.getElementById("table").innerHTML = output;                 
+            }
+            
+            //Event handler for when the add contact button is clicked.
+            function addContact(){
+                window.open("add-contact.html", "_self");   //opens the add contact page in the same tab.
+            }
+
+            function editContact(id){
+                window.open("edit-contact.html?id=" + id, "_self");
+            }
+        </script>
+    </body>
+</html>
